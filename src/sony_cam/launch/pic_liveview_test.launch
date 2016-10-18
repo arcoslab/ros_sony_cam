@@ -1,0 +1,34 @@
+<launch>
+    <node
+    pkg="sony_cam"
+    type="sony_cam_node.py"
+    name="cam_node"
+    launch-prefix="x-terminal-emulator -e"
+    />
+    
+    <node
+    pkg="sony_cam"
+    type="client_test.py"
+    name="test_picture_serv"
+    launch-prefix="x-terminal-emulator -e"
+    />
+ 
+    <node
+    pkg="image_view"
+    type="image_view"
+    name="show_liveview"
+    args="compressed"
+    > 
+        <remap from="image" to="/liveview" />
+    </node>
+    
+    <node
+    pkg="image_view"
+    type="image_view"
+    name="show_hdpicture"
+    args="compressed"
+    > 
+        <remap from="image" to="/hdpicture" />
+    </node>
+
+</launch>
