@@ -10,13 +10,6 @@
 * misc:
     * available_api_qx1.txt: available api functions in QX1 camera.
 
-## API Reference
-
-###Liveview###
-The camera sends repeatedly, jpeg pictures of low quality, these are published in **liveview/compressed** topic, as **CompressedImage** type message.
-
-###Take photo###
-To obtain a high quality picture, make a request to service **sony_cam/request_image**, with a service type GetPolledImage, then the image will be published in **hdpicture/compressed** topic, as **CompressedImage** type message. One service request must be made for every picture.
 
 ## Tests
 
