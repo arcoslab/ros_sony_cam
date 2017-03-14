@@ -1,6 +1,6 @@
 ## Synopsis
 
-ROS package to use Sony cameras using Sony Remote API.
+ROS package for Sony cameras using Sony Remote API.
 
 Includes the sony_cam_node.py which provides camera's output, and some scripts to test this node.
 
@@ -31,6 +31,8 @@ $ cd sony_camera_api/
 
 $ sudo python setup.py install
 
+Note: Current release (0.1.11) will not work with this program.
+
 ### Download and build sony_cam package
 
 $ git clone git@github.com:arcoslab/ros_sony_cam.git
@@ -46,7 +48,7 @@ $ source devel/setup.bash
 this last step must be executed from every terminal before using this package
 
 ## Run
-Now from the same terminal were we source the setup.bash
+Now from the same terminal where we source the setup.bash
 
 We may run the launch file to see the camera's output, liveview (low quality images) and high quality photos.
 

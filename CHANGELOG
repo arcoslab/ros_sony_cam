@@ -1,0 +1,5 @@
+#dd/mm/yyyy
+
+#13/03/2017
+-Now takepicture service and liveview topic may handle sudden camera disconnection.
+-Set duration of discover.

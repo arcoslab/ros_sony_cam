@@ -19,17 +19,17 @@ class CameraHandler:
         self.hdpic_tstamp=Time(0,0)
         self.hdpic_msg = CompressedImage() # message to publish
         
-    def find_camera(self):
+    def find_camera(self, duration=3):
         """
         uses the discover protocol and sets communication with one camera
         """
         # get available camera
         search = ControlPoint()
-        self.cameras = search.discover()
+        self.cameras = search.discover(duration)
 
         # use first found camera
         if len(self.cameras):
-            self.cam = SonyAPI(QX_ADDR=self.cameras[0])
+            self.cam = SonyAPI(self.cameras[0])
         else:
             self.cam = None
             rospy.logerr("No camera found")
@@ -50,58 +50,62 @@ class CameraHandler:
 
         rospy.loginfo("Found camera")
         return
-        
+    
+    def logerror(self, msg):
+        rospy.logerr(msg)
+        return GetPolledImageResponse(\
+                    success=False,
+                    status_message=msg, 
+                    stamp=Time(0))
+
     def take_picture(self,req):
         """
         callback function to handle polled camera requests
-        """
-        self.cam.setShootMode(param=['still'])
-        
-        # set timestamp for picture
-        now = time.time()
-        self.hdpic_tstamp = Time(now)
-        
-        # get status snapshot of cam
-        event = self.cam.getEvent(param=[False])
-        
-        if "error" in event:
-            rospy.logerr(event['error'])
-            return GetPolledImageResponse(success=False,status_message=str(evet['error']), stamp=Time(0))
-         
-        # check if is available to take pic   
-        if (event['result'][1]['cameraStatus']!='IDLE'):
-            rospy.loginfo("Camera is busy")
+        """ 
+        try:
+            self.cam.setShootMode(param=['still'])
+
+            # set timestamp for picture
+            now = time.time()
+            self.hdpic_tstamp = Time(now)
+            
+            # get status snapshot of cam
+            event = self.cam.getEvent(param=[False])
+
+            if "error" in event:
+                return self.logerror(str(event['error']))    
+
+            # check if is available to take pic   
+            if (event['result'][1]['cameraStatus']!='IDLE'):
+                rospy.loginfo("Camera is busy")
+                return self.logerror("Camera is busy")
+            
+            # take pic
+            self.hdpic_resp = self.cam.actTakePicture()
+            if 'error' in self.hdpic_resp:
+                rospy.logerr(self.hdpic_resp['error'])
+                return self.logerror(str(self.hdpic_resp['error']))
+            
+            # download pic    
+            url = self.hdpic_resp['result'][0][0].replace('\\','')
+            self.hdpicture = urllib2.urlopen(url).read()
+            self.hdpic_seq += 1 # increment sequence counter
+            
+            rospy.loginfo("Picture taken")
+            
+            # publish one pic
+            self.pub_hdpic()
+            
+            # service response
             return GetPolledImageResponse(\
-                    success=False,\
-                    status_message="Camera is busy",\
-                    stamp=Time(0))
-        
-        # take pic
-        self.hdpic_resp = self.cam.actTakePicture()
-        if 'error' in self.hdpic_resp:
-            rospy.logerr(self.hdpic_resp['error'])
-            return GetPolledImageResponse(\
-                    success=False,\
-                    status_message=str(self.hdpic_resp['error']),\
-                    stamp=Time(0))
-        
-        # download pic    
-        url = self.hdpic_resp['result'][0][0].replace('\\','')
-        self.hdpicture = urllib2.urlopen(url).read()
-        
-        self.hdpic_seq += 1 # increment sequence counter
-        
-        rospy.loginfo("Picture taken")
-        
-        # publish one pic
-        self.pub_hdpic()
-        
-        # service response
-        return GetPolledImageResponse(\
-                success=True,\
-                status_message="Picture taken",\
-                stamp=self.hdpic_tstamp)
-    
+                    success=True,\
+                    status_message="Picture taken",\
+                    stamp=self.hdpic_tstamp)
+
+        except Exception as err:
+            rospy.logerr(str(err))
+            return self.logerror("Couldn't take picture")
+
     def set_serv_pic(self):
         """
         sets the service to take pictures
@@ -152,39 +156,51 @@ class CameraHandler:
         
         img_msg = CompressedImage() # message to publish
         
-        while not rospy.is_shutdown():
+        last_fetch = time.time()
+        new_live = False # reset liveview object flag
 
-            # read next image
-            data = incoming.read(8)
-            common = common_header(data)
-            data = incoming.read(128)
-            if common['payload_type']==1: # jpeg frame
-                payload = payload_header(data)
-                image_file = incoming.read(payload['jpeg_data_size'])
-                   
-                # fill message fields
-                img_msg.header.seq = common['sequence_number']
-                img_msg.header.stamp.secs = common['time_stamp']/1000.
-                img_msg.header.stamp.nsecs = common['time_stamp']*1000.
-                img_msg.header.frame_id = "right_sony_cam"
+        while not rospy.is_shutdown():
+            
+            try:
+                if new_live:
+                    incoming = self.cam.liveview()
                 
-                img_msg.format = 'jpeg'
-                img_msg.data = image_file
-                # end fill
-                
-                pub.publish(img_msg)
-                                      
-                # todo: set delay
-    
-    
+                # read next image
+                data = incoming.read(8)
+                common = common_header(data)
+                data = incoming.read(128)
+                if common['payload_type']==1: # jpeg frame
+                    payload = payload_header(data)
+                    image_file = incoming.read(payload['jpeg_data_size'])
+
+                    # fill message fields
+                    img_msg.header.seq = common['sequence_number']
+                    img_msg.header.stamp.secs = common['time_stamp']/1000.
+                    img_msg.header.stamp.nsecs = common['time_stamp']*1000.
+                    img_msg.header.frame_id = "right_sony_cam"
+                    
+                    img_msg.format = 'jpeg'
+                    img_msg.data = image_file
+                    # end fill
+
+                    pub.publish(img_msg)
+
+                last_fetch = time.time()
+
+            except Exception as err:
+                if time.time()-last_fetch > 5.0 :
+                    rospy.logerr("Couldn't get liveview")         
+                    last_fetch = time.time()
+                    new_live = True 
+
+
 def main():
 
     rospy.init_node('sony_camera')
     
     cam_hand = CameraHandler()
     while (cam_hand.cam==None):
-        time.sleep(3)
-        cam_hand.find_camera()
+        cam_hand.find_camera(3)
     
     # start liveview publisher
     thread_liveview = Thread(target=cam_hand.liveview)
@@ -196,7 +212,7 @@ def main():
     
     # start hd image publisher
     cam_hand.prep_pub_hdpic()
-        
+    
     while not rospy.is_shutdown():
         pass
         
