@@ -50,7 +50,8 @@ this last step must be executed from every terminal before using this package
 ## Run
 Now from the same terminal where we source the setup.bash
 
-We may run the launch file to see the camera's output, liveview (low quality images) and high quality photos.
+Connect to camera's Wifi with the password given on battery lid and then
+we may run the launch file to see the camera's output, liveview (low quality images) and high quality photos.
 
 $ roslaunch sony_cam pic_liveview_test.launch
 
@@ -72,6 +73,14 @@ The camera sends repeatedly, jpeg pictures of low quality, these are published i
 
 ###Take photo###
 To obtain a high quality picture, make a request to service **sony_cam/request_image**, with a service type GetPolledImage, then the image will be published in **hdpicture/compressed** topic, as **CompressedImage** type message. One service request must be made for every picture.
+
+###Timeouts###
+Modify the following constants in sony_cam_node.py to set time limit for specific tasks.
+
+ - TIMEOUT_TAKEPIC
+ - TIMEOUT_FINDCAM
+ - TIMEOUT_GETLIVEVIEW
+
 
 ## Examples
 

@@ -3,3 +3,8 @@
 #13/03/2017
 -Now takepicture service and liveview topic may handle sudden camera disconnection.
 -Set duration of discover.
+
+#21/03/2017
+-Solved first-discover-no-connection bug.
+-Improve handling of no-camera-connection situations.
+
