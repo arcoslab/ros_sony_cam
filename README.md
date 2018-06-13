@@ -113,15 +113,15 @@ $ rosrun image_view image_view image:=/hdpicture _image_transport:=compressed
 
 ## API Reference: sony_cam_node.py
 
-###Liveview###
+### Liveview
 The camera sends repeatedly, jpeg pictures of low quality, these are published in **liveview/compressed** topic, as **CompressedImage** type messages.
 
 
-###Take photo###
+### Take photo
 To obtain a high quality picture, make a request to service **sony_cam/request_image**, with a service of the type GetPolledImage, then the image will be published in **hdpicture/compressed** topic, as **CompressedImage** type messages. One service request must be made for every picture.
 
 
-###Timeouts###
+### Timeouts
 
 Modify the following constants in sony_cam_node.py to set time limit for specific tasks:
 
