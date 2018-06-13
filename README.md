@@ -134,6 +134,11 @@ Modify the following constants in sony_cam_node.py to set time limit for specifi
 
 See `client_test.py` to learn how to use the service image request.
 
+
+## License
+
+GPLv3, see <http://www.gnu.org/licenses/>
+
 ## Contact
 
 Alexander Marin Drobinoga <alexanderm2230@gmail.com>
