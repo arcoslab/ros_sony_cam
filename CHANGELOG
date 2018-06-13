@@ -8,3 +8,6 @@
 -Solved first-discover-no-connection bug.
 -Improve handling of no-camera-connection situations.
 
+#13/06/2018
+-Added license headers
+-Improved README instructions
