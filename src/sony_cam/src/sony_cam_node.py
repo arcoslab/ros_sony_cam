@@ -251,7 +251,7 @@ class CameraHandler:
             if 'setLiveviewFrameInfo' in (self.mode['result'])[0]:
                 self.cam.setLiveviewFrameInfo([{"frameInfo": False}])
 
-            self.incoming = self.cam.liveview()
+            self.incoming = urllib2.urlopen(self.cam.liveview())
 
         except Exception:
             rospy.logerr("Couldn't reset liveview")
